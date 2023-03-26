@@ -1,59 +1,33 @@
 from __future__ import division, print_function
-
-# coding=utf-8
-import os
-import re
-import sys
-import glob
-import pickle
-import numpy as np
-import pandas as pd
-from itertools import chain
-import matplotlib
+#Visualization and Image processing utils
 from matplotlib import pyplot as plt
-from matplotlib.lines import Line2D
-import cv2
 import seaborn as sns
+import numpy as np
+import os
 from PIL import Image
 from torchvision import transforms
-from datetime import date
-
-import numpy as np
 import torch
-from torchvision.transforms import Compose, Normalize, ToTensor
-from typing import List, Dict
-import math
+#Pdf generator utils
+from datetime import date
 from io import BytesIO
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
-from reportlab.lib.utils import ImageReader
-from reportlab.graphics.shapes import Drawing, String
-from reportlab.graphics.charts.barcharts import VerticalBarChart
-from reportlab.graphics import renderPDF
-
-
-
 # Flask utils
-from flask import Flask, redirect, url_for, request, render_template,send_file
+from flask import Flask, request, render_template,send_file
 from werkzeug.utils import secure_filename
-from gevent.pywsgi import WSGIServer
-
-from model import convnextaa_base
-from patient_info import PatientForm
+from model import convnextaa_base #AACN model
+from patient_info import PatientForm # Pateint Form class
 
 # Defining the flask app
 app = Flask(__name__, static_folder = os.path.abspath('static/'))
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model_path = "./static/model/conv_check.pt"
-
 model = convnextaa_base(num_classes=7, pretrained=True, aa="ecanet",path=model_path)
 model.to(device)
 classes = ['Actinic keratoses', 'Basal cell carcinoma', 'Benign keratosis',
         'Dermatofibroma', 'Melanoma', 'Melanocytic nevi', 'Vascular lesions']
-# Defining= the path for image and model
-UPLOAD_FOLDER = './static/uploaded_images/'
 
 def model_predict(input_img):
 
@@ -72,15 +46,6 @@ def model_predict(input_img):
 
     return per
 
-def preprocess_image(
-    img: np.ndarray, mean=[
-        0.5, 0.5, 0.5], std=[
-            0.5, 0.5, 0.5]) -> torch.Tensor:
-    preprocessing = Compose([
-        ToTensor(),
-        Normalize(mean=mean, std=std)
-    ])
-    return preprocessing(img.copy()).unsqueeze(0)
 
 def loadImage(image_path):
     # Open the image using PIL
@@ -161,48 +126,36 @@ def generate_report():
      # read data from result.txt file
     with open("result.txt", "r") as file:
         result_data = file.read().split("\n")
-    
+    patinet_data_pdf =[]
+    str_patient_pdf = ["Patient ID: ","Patient Name: ","Patient Age: ","Patient Type: ","Skin localization: ","Classification Result: "]
     # extract patient information
-    patient_id = result_data[0].split(":")[1].strip()
-    patient_name = result_data[1].split(":")[1].strip()
-    patient_age = result_data[2].split(":")[1].strip()
-    patient_gender = result_data[3].split(":")[1].strip()
-    patient_type = result_data[4].split(":")[1].strip()
-    patient_loc = result_data[5].split(":")[1].strip()
-    patient_label = result_data[6].split(":")[1].strip()
-    patient_img = result_data[7].split(":")[1].strip()
-
+    for i in len(result_data):
+        patinet_data_pdf[i] = result_data[i].split(":")[1].strip()
     # read chart image data from chart.png file
     with open("chart.png", "rb") as file:
         chart_data = file.read()
-
     # # Create a PDF buffer
     buffer = BytesIO()
     # # Create the PDF object, using the BytesIO object as its "file."
     pdf = canvas.Canvas(buffer, pagesize=letter)
-
     # # Insert the patient information into the PDF
     pdf.setFont("Helvetica-Bold", 12)
     pdf.setFillColor(colors.black)
-    pdf.drawString(0.5*inch, 10*inch, f"Patient ID: {patient_id}")
-    pdf.drawString(0.5*inch, 9.5*inch, f"Patient Name: {patient_name}")
-    pdf.drawString(0.5*inch, 9*inch, f"Patient Age: {patient_age}")
-    pdf.drawString(0.5*inch, 8.5*inch, f"Patient Gender: {patient_gender}")
-    pdf.drawString(0.5*inch, 8*inch, f"Patient Type: {patient_type}")
-    pdf.drawString(0.5*inch, 7.5*inch, f"Skin localization: {patient_loc}")
-    pdf.drawString(0.5*inch, 7*inch, f"Classification Result: {patient_label}")
+    y_pos = 10
+    pos_i = 0
+    for i in len(patinet_data_pdf)-1:
+        pdf.drawString(0.5*inch, (y_pos+pos_i)*inch, str_patient_pdf[i] + patinet_data_pdf[i])
+        pos_i+=0.5
     # add the date to the report
     pdf.drawString(6.5 * inch, 10.5 * inch, date.today().strftime("%B %d, %Y"))
     # Insert the image into the PDF
-    pdf.drawImage(patient_img,5 * inch, 8 * inch, width=2.5 * inch, height=2 * inch)
+    pdf.drawImage(patinet_data_pdf[7],5 * inch, 8 * inch, width=2.5 * inch, height=2 * inch)
     # add the chart image and result to the report
     chart_data = "chart.png"
     pdf.drawImage(chart_data, 1 * inch, 1 * inch, width=6.5 * inch, height=6 * inch)
-
     # Save the PDF to the buffer and close it
     pdf.save()
     buffer.seek(0)
-
     # Return the PDF file as a download
     return send_file(path_or_file=buffer, download_name='classification_report.pdf', as_attachment=True)
 
