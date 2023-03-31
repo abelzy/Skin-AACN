@@ -151,6 +151,5 @@ def generate_report():
     return send_file(path_or_file=buffer, download_name='classification_report.pdf', as_attachment=True)
 
 
-
 if __name__ == '__main__':
     app.run(host = "0.0.0.0", debug = True, use_reloader=False)
