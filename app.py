@@ -102,16 +102,6 @@ def index():
     return None
 
 def save_Patient_info(class_labels):
-
-    with open('result.txt', 'w') as f:
-        f.write(f'Patient ID: {patient_info.patient_Id}\n')
-        f.write(f'Patient Name: {patient_info.patient_Name}\n')
-        f.write(f'Patient Age: {patient_info.patient_age}\n')
-        f.write(f'Patient Gender: {patient_info.patient_gender}\n')
-        f.write(f'Patient Type: {patient_info.patient_type}\n')
-        f.write(f'Patient Localization: {patient_info.patient_loc}\n')
-        f.write(f'Predicted Label: {patient_info.patient_label}\n')
-        f.write(f'Image Name: {patient_info.image_name}\n')
     # Create a bar chart of the confidence values
     x_labels = class_labels
     y_values = [float(c) for c in patient_info.patient_conf]
@@ -125,20 +115,13 @@ def save_Patient_info(class_labels):
     # Save the bar chart to a file
     fig.savefig('chart.png')
     #save patient info into database
-    db.insert_patient(patient_name="John Smith", patient_age=45, lesion_image="lesion1.jpg", prediction="benign")
-
-
+    db.insert_patient(patient_info)
 
 @app.route('/report', methods=['POST'])
 def generate_report():
-     # read data from result.txt file
-    with open("result.txt", "r") as file:
-        result_data = file.read().split("\n")
-    patinet_data_pdf =[]
-    str_patient_pdf = ["Patient ID: ","Patient Name: ","Patient Age: ","Patient Type: ","Skin localization: ","Classification Result: "]
-    # extract patient information
-    for i in len(result_data):
-        patinet_data_pdf[i] = result_data[i].split(":")[1].strip()
+    #  read data from database
+    patinet_data_pdf =db.get_recent_patient_info()
+    str_patient_pdf = ["Patient ID: ","Patient Name: ","Patient Age: ","Patient Gender: ","Patient Type: ","Skin localization: ","Classification Result: "]
     # read chart image data from chart.png file
     with open("chart.png", "rb") as file:
         chart_data = file.read()
@@ -150,14 +133,14 @@ def generate_report():
     pdf.setFont("Helvetica-Bold", 12)
     pdf.setFillColor(colors.black)
     y_pos = 10
-    pos_i = 0
-    for i in len(patinet_data_pdf)-1:
-        pdf.drawString(0.5*inch, (y_pos+pos_i)*inch, str_patient_pdf[i] + patinet_data_pdf[i])
-        pos_i+=0.5
+    for i in range(len(patinet_data_pdf)):
+        print(str_patient_pdf[i] + str(patinet_data_pdf[i]))
+        pdf.drawString(0.5*inch, y_pos*inch, str_patient_pdf[i] + str(patinet_data_pdf[i]))
+        y_pos-=0.5
     # add the date to the report
     pdf.drawString(6.5 * inch, 10.5 * inch, date.today().strftime("%B %d, %Y"))
     # Insert the image into the PDF
-    pdf.drawImage(patinet_data_pdf[7],5 * inch, 8 * inch, width=2.5 * inch, height=2 * inch)
+    pdf.drawImage("input.jpg",5 * inch, 8 * inch, width=2.5 * inch, height=2 * inch)
     # add the chart image and result to the report
     chart_data = "chart.png"
     pdf.drawImage(chart_data, 1 * inch, 1 * inch, width=6.5 * inch, height=6 * inch)

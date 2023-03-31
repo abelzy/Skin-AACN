@@ -1,5 +1,6 @@
 import pymysql
 from datetime import datetime
+from patient_info import PatientForm
 
 class PatientDatabase:
     def __init__(self, host, user, password, database):
@@ -35,14 +36,16 @@ class PatientDatabase:
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.connect()
         self.cursor.execute(f"USE {self.database}")
+        print(patient_info)
         self.cursor.execute("INSERT INTO patient_info (patient_id, patient_name, patient_age, patient_gender, patient_type, patient_loc, patient_label, date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
                             (patient_info.patient_Id, patient_info.patient_Name, patient_info.patient_age, patient_info.patient_gender, patient_info.patient_type, patient_info.patient_loc, patient_info.patient_label, now))
+        self.connection.commit()
         self.disconnect()
 
     def get_recent_patient_info(self):
         self.connect()
         self.cursor.execute(f"USE {self.database}")
-        query = "SELECT * FROM patient_info ORDER BY date DESC LIMIT 1"
+        query = "SELECT patient_id, patient_name, patient_age, patient_gender, patient_type, patient_loc, patient_label FROM patient_info ORDER BY date DESC LIMIT 1"
         self.cursor.execute(query)
         patient = self.cursor.fetchone()
         return patient

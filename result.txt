@@ -1,0 +1,8 @@
+Patient ID: 531321
+Patient Name: ABEL ZENEBE YUTRA
+Patient Age: 56
+Patient Gender: male
+Patient Type: follow_up
+Patient Localization: back
+Predicted Label: Benign keratosis
+Image Name: input.jpg
