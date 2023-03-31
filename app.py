@@ -14,6 +14,8 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from reportlab.pdfgen import canvas
+#database
+from patient_db import PatientDatabase
 # Flask utils
 from flask import Flask, request, render_template,send_file
 from werkzeug.utils import secure_filename
@@ -28,6 +30,10 @@ model = convnextaa_base(num_classes=7, pretrained=True, aa="ecanet",path=model_p
 model.to(device)
 classes = ['Actinic keratoses', 'Basal cell carcinoma', 'Benign keratosis',
         'Dermatofibroma', 'Melanoma', 'Melanocytic nevi', 'Vascular lesions']
+#initialize Database
+db = PatientDatabase(host="localhost", user="root", password="zedo2508", database="skinaacn")
+db.create_database()
+db.create_table()
 
 def model_predict(input_img):
 
@@ -106,7 +112,6 @@ def save_Patient_info(class_labels):
         f.write(f'Patient Localization: {patient_info.patient_loc}\n')
         f.write(f'Predicted Label: {patient_info.patient_label}\n')
         f.write(f'Image Name: {patient_info.image_name}\n')
-
     # Create a bar chart of the confidence values
     x_labels = class_labels
     y_values = [float(c) for c in patient_info.patient_conf]
@@ -119,6 +124,9 @@ def save_Patient_info(class_labels):
     plt.xticks(rotation=45)
     # Save the bar chart to a file
     fig.savefig('chart.png')
+    #save patient info into database
+    db.insert_patient(patient_name="John Smith", patient_age=45, lesion_image="lesion1.jpg", prediction="benign")
+
 
 
 @app.route('/report', methods=['POST'])
