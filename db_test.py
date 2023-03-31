@@ -34,6 +34,23 @@ with conn.cursor() as cursor:
             diagnosis VARCHAR(255) NOT NULL
         )
     ''')
+# Commit the changes to the database
+conn.commit()
+
+# Get a cursor object
+cursor = conn.cursor()
+
+# Define the patient information
+patient_name = "John Doe"
+patient_age = 45
+patient_gender = "Male"
+patient_diagnosis = "Skin Lesion"
+
+# Create a SQL query to insert patient information into the database
+sql = "INSERT INTO patients (name, age, gender, diagnosis) VALUES (%s, %s, %s, %s)"
+
+# Execute the query with the patient information as parameters
+cursor.execute(sql, (patient_name, patient_age, patient_gender, patient_diagnosis))
 
 # Commit the changes to the database
 conn.commit()
