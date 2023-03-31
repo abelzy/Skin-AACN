@@ -1,7 +1,7 @@
-import mysql.connector
-from mysql.connector import Error
+import pymysql
+from datetime import datetime
 
-class SkinLesionDatabase:
+class PatientDatabase:
     def __init__(self, host, user, password, database):
         self.host = host
         self.user = user
@@ -9,35 +9,40 @@ class SkinLesionDatabase:
         self.database = database
 
     def connect(self):
-        try:
-            self.connection = mysql.connector.connect(
-                host=self.host,
-                user=self.user,
-                password=self.password,
-                database=self.database
-            )
-            self.cursor = self.connection.cursor()
-            print("Connection established")
-        except Error as e:
-            print(f"The error '{e}' occurred")
+        self.connection = pymysql.connect(
+            host=self.host,
+            user=self.user,
+            password=self.password
+        )
+        self.cursor = self.connection.cursor()
 
-    def create_patient_info_table(self):
-        self.cursor.execute("CREATE TABLE IF NOT EXISTS patient_info (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), age INT, sex VARCHAR(10), date DATE, lesion_image BLOB)")
-        print("Table created")
+    def disconnect(self):
+        self.cursor.close()
+        self.connection.close()
 
-    def insert_patient_info(self, name, age, sex, date, lesion_image):
-        query = "INSERT INTO patient_info (name, age, sex, date, lesion_image) VALUES (%s, %s, %s, %s, %s)"
-        values = (name, age, sex, date, lesion_image)
-        self.cursor.execute(query, values)
-        self.connection.commit()
-        print(f"{self.cursor.rowcount} record inserted.")
+    def create_database(self):
+        self.connect()
+        self.cursor.execute(f"CREATE DATABASE IF NOT EXISTS {self.database}")
+        self.disconnect()
+
+    def create_table(self):
+        self.connect()
+        self.cursor.execute(f"USE {self.database}")
+        self.cursor.execute("CREATE TABLE IF NOT EXISTS patient_info (id INT AUTO_INCREMENT PRIMARY KEY, patient_id VARCHAR(255), patient_name VARCHAR(255), patient_age INT, patient_gender VARCHAR(10), patient_type VARCHAR(255), patient_loc VARCHAR(255), patient_label VARCHAR(255), date DATE)")
+        self.disconnect()
+
+    def insert_patient(self, patient_info):
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.connect()
+        self.cursor.execute(f"USE {self.database}")
+        self.cursor.execute("INSERT INTO patient_info (patient_id, patient_name, patient_age, patient_gender, patient_type, patient_loc, patient_label, date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                            (patient_info.patient_Id, patient_info.patient_Name, patient_info.patient_age, patient_info.patient_gender, patient_info.patient_type, patient_info.patient_loc, patient_info.patient_label, now))
+        self.disconnect()
 
     def get_recent_patient_info(self):
+        self.connect()
+        self.cursor.execute(f"USE {self.database}")
         query = "SELECT * FROM patient_info ORDER BY date DESC LIMIT 1"
         self.cursor.execute(query)
-        result = self.cursor.fetchone()
-        return result
-
-    def close(self):
-        self.connection.close()
-        print("Connection closed")
+        patient = self.cursor.fetchone()
+        return patient
