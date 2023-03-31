@@ -4,21 +4,21 @@ import pymysql
 conn = pymysql.connect(
     host='localhost',
     user='root',
-    password='password',
+    password='zedo2508',
     charset='utf8mb4',
     cursorclass=pymysql.cursors.DictCursor
 )
 
 # Create a new database called 'mydatabase'
 with conn.cursor() as cursor:
-    cursor.execute('CREATE DATABASE IF NOT EXISTS mydatabase')
+    cursor.execute('CREATE DATABASE IF NOT EXISTS skinaacn')
 
 # Connect to the new database
 conn = pymysql.connect(
     host='localhost',
     user='root',
-    password='password',
-    db='mydatabase',
+    password='zedo2508',
+    db='skinaacn',
     charset='utf8mb4',
     cursorclass=pymysql.cursors.DictCursor
 )
