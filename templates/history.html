@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>History</title>
+  </head>
+  <body>
+    <h1>History</h1>
+    <form method="post">
+      <label for="patient_id">Search by Patient ID:</label>
+      <input type="text" id="patient_id" name="patient_id">
+      <input type="submit" value="Search">
+    </form>
+    <br>
+    <table>
+      <tr>
+        <th>Patient ID</th>
+        <th>Patient Name</th>
+        <th>Patient Age</th>
+        <th>Patient Gender</th>
+        <th>Patient Type</th>
+        <th>Patient Localization</th>
+        <th>Predicted Label</th>
+        <th>Date</th>
+      </tr>
+      {% for row in result %}
+      <tr>
+        <td>{{ row.patient_id }}</td>
+        <td>{{ row.patient_name }}</td>
+        <td>{{ row.patient_age }}</td>
+        <td>{{ row.patient_gender }}</td>
+        <td>{{ row.patient_type }}</td>
+        <td>{{ row.patient_loc }}</td>
+        <td>{{ row.patient_label }}</td>
+        <td>{{ row.date }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </body>
+</html>

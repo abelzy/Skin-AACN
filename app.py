@@ -150,6 +150,19 @@ def generate_report():
     # Return the PDF file as a download
     return send_file(path_or_file=buffer, download_name='classification_report.pdf', as_attachment=True)
 
+@app.route('/history')
+def history():
+    # get all prediction history and Info
+
+    result= db.get_history()
+    if request.method == 'POST':
+        patient_id = request.form['patient_id']
+        # filter the result to show only entries with the entered patient ID
+        result = [row for row in result if row['patient_id'] == patient_id]
+        
+    return render_template('history.html', data=result)
+
+
 
 if __name__ == '__main__':
     app.run(host = "0.0.0.0", debug = True, use_reloader=False)

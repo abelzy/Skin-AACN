@@ -48,4 +48,24 @@ class PatientDatabase:
         query = "SELECT patient_id, patient_name, patient_age, patient_gender, patient_type, patient_loc, patient_label FROM patient_info ORDER BY date DESC LIMIT 1"
         self.cursor.execute(query)
         patient = self.cursor.fetchone()
+        self.disconnect()
+
         return patient
+    
+
+    def get_history(self,patient_id=None):
+        self.connect()
+        self.cursor.execute(f"USE {self.database}")
+        if patient_id:
+            query = "SELECT * FROM patient_info WHERE patient_id LIKE %s ORDER BY date DESC"
+            self.cursor.execute(query, ('%' + patient_id + '%',))
+        else:        
+            query = "SELECT * FROM patient_info ORDER BY patient_info.date DESC"
+            self.cursor.execute(query)
+
+        all_data = self.cursor.fetchall()
+        self.disconnect()
+
+        return all_data
+
+
