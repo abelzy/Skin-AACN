@@ -60,7 +60,7 @@ class PatientDatabase:
             query = "SELECT * FROM patient_info WHERE patient_id LIKE %s ORDER BY date DESC"
             self.cursor.execute(query, ('%' + patient_id + '%',))
         else:        
-            query = "SELECT * FROM patient_info ORDER BY patient_info.date DESC"
+            query = "SELECT patient_id, patient_name, patient_age, patient_gender, patient_type, patient_loc, patient_label, date FROM patient_info ORDER BY patient_info.date DESC"
             self.cursor.execute(query)
 
         all_data = self.cursor.fetchall()

@@ -287,11 +287,9 @@ h6 {
   font-size: 16px;
 }
 .btn2 {
-  display:inline-flex;
-  line-height: 40px;
-  padding: 10px 65px;
-  margin-bottom: 10px;
-  margin:  15px;
+  display:block;
+
+  padding: 10px;
   font-family: Poppins, Arial, "Helvetica Neue", sans-serif;
   cursor: pointer;
   border: 0 none;
