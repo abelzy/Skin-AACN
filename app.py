@@ -26,8 +26,8 @@ from patient_info import PatientForm # Pateint Form class
 app = Flask(__name__, static_folder = os.path.abspath('static/'))
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model_path = "./static/model/conv_check.pt"
-model = convnextaa_base(num_classes=7, pretrained=True, aa="ecanet",path=model_path)
-model.to(device)
+model = ""#convnextaa_base(num_classes=7, pretrained=True, aa="ecanet",path=model_path)
+# model.to(device)
 classes = ['Actinic keratoses', 'Basal cell carcinoma', 'Benign keratosis',
         'Dermatofibroma', 'Melanoma', 'Melanocytic nevi', 'Vascular lesions']
 #initialize Database
