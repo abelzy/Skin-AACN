@@ -70,8 +70,6 @@ def loadImage(image_path):
     image_tensor = image_tensor.to(device)
     return image_tensor
 
-
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == "GET":
@@ -153,16 +151,13 @@ def generate_report():
 @app.route('/history', methods=['POST'])
 def history():
     # get all prediction history and Info
-
     result= db.get_history()
     # if request.method == 'POST':
     #     # patient_id = request.form['patient_id']
     #     # filter the result to show only entries with the entered patient ID
     #     # result = [row for row in result if row['patient_id'] == patient_id]
-    print(result)
+    # print(result)
     return render_template('history.html', result=result)
-
-
 
 if __name__ == '__main__':
     app.run(host = "0.0.0.0", debug = True, use_reloader=False)
