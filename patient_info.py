@@ -1,11 +1,21 @@
+from datetime import datetime
 class PatientForm:
-    def __init__(self,p_name,p_id,p_age,p_gender,p_type,p_loc,p_label,p_conf,img) -> None:
-        self.patient_Name = p_name
-        self.patient_Id = p_id
-        self.patient_age = p_age
-        self.patient_gender = p_gender
-        self.patient_type = p_type
-        self.patient_loc = p_loc
-        self.patient_label = p_label
-        self.patient_conf = p_conf
+    def __init__(self,request) -> None:
+        self.patient_Name = request.form['patient_name']
+        self.patient_Id = request.form['patient_id']
+        self.patient_age = request.form['patient_age']
+        self.patient_gender = str(request.form['gender'])
+        self.patient_type = request.form['patient_type']
+        self.patient_loc = request.form['localization']
+
+
+class PredictionHistory:
+    def __init__(self,p_id,p_label,p_conf,p_all_conf,img) -> None:
+
+        self.class_id = p_id
+        self.class_label = p_label
+        self.class_conf = p_conf
+        self.all_class_conf = p_all_conf
+        self.timestamp= datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.image_name = img
+        

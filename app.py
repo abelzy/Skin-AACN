@@ -20,36 +20,34 @@ from patient_db import PatientDatabase
 from flask import Flask, request, render_template,send_file
 from werkzeug.utils import secure_filename
 from model import convnextaa_base #AACN model
-from patient_info import PatientForm # Pateint Form class
+from patient_info import * # Pateint Form classes
 
 # Defining the flask app
+app_root = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__, static_folder = os.path.abspath('static/'))
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model_path = "./static/model/conv_check.pt"
-model = ""#convnextaa_base(num_classes=7, pretrained=True, aa="ecanet",path=model_path)
-# model.to(device)
+model = convnextaa_base(num_classes=7, pretrained=True, aa="ecanet",path=model_path)
+model.to(device)
 classes = ['Actinic keratoses', 'Basal cell carcinoma', 'Benign keratosis',
         'Dermatofibroma', 'Melanoma', 'Melanocytic nevi', 'Vascular lesions']
 #initialize Database
-db = PatientDatabase(host="localhost", user="root", password="zedo2508", database="skinaacn")
+db = PatientDatabase(database="skinaacn")
 db.create_database()
-db.create_table()
+db.create_tables()
 
 def model_predict(input_img):
-
+#Set the model for evaluation
     model.eval()
     output = model(input_img)
     sm = torch.nn.Softmax(dim=1)
     probabilities = sm(output) 
-
     p= probabilities.cpu()
     num = p.detach().numpy()[0]
     per =[]
     for i in num:
         per.append(i*100)
     per =np.round_(per,2)
-    print(per)
-
     return per
 
 
@@ -78,31 +76,31 @@ def index():
 
     if request.method == 'POST':
         image_file = request.files['myfile']
+        global patient_info
+        patient_info = PatientForm( request)
         # Save the file to ./uploads
         basepath = os.path.dirname(__file__)
-        # image_location = os.path.join(basepath, 'static', secure_filename(image_file.filename))
-        image_location = "input.jpg"
-        image_file.save(image_location)
-        input_img = loadImage(image_location)
+        img_data = "./static/lesions/" + secure_filename(patient_info.patient_Id) + ".jpg"
+        image_file.save(img_data)
+        input_img = loadImage(img_data)
         # Make prediction
         pred_probs = model_predict(input_img)
         # Map output to labels
-        pred_class = classes[pred_probs.argmax()]
-        img_data = "../static/"+secure_filename(image_file.filename)
-        # img_data = "../input.jpg"
-        global patient_info
-        patient_info = PatientForm( request.form['patient_name'],request.form['patient_id'],request.form['patient_age'], str(request.form['gender']), request.form['patient_type'],request.form['localization'],pred_class,pred_probs,image_location)
-        save_Patient_info(classes)
+        class_id = pred_probs.argmax()
+        pred_class = classes[class_id]
+        global prediction_info
+        prediction_info = PredictionHistory(class_id,pred_class,pred_probs[class_id],pred_probs,img_data)
+        save_Patient_info()
         lis = [classes,pred_probs]
         result = {"class":pred_class, "probs":lis, "image":img_data}
         return render_template('result2.html', result=result)
 
     return None
 
-def save_Patient_info(class_labels):
+def save_Patient_info():
     # Create a bar chart of the confidence values
-    x_labels = class_labels
-    y_values = [float(c) for c in patient_info.patient_conf]
+    x_labels = classes
+    y_values = [float(c) for c in prediction_info.all_class_conf]
     fig, ax = plt.subplots()
     sns.barplot(x=x_labels, y=y_values, ax=ax)
     ax.set_ylim(0, 1)
@@ -114,12 +112,18 @@ def save_Patient_info(class_labels):
     fig.savefig('chart.png')
     #save patient info into database
     db.insert_patient(patient_info)
+    db.insert_classification(prediction_info)
+    db.insert_prediction(patient_info,prediction_info)
+
+    
 
 @app.route('/report', methods=['POST'])
 def generate_report():
     #  read data from database
-    patinet_data_pdf =db.get_recent_patient_info()
-    str_patient_pdf = ["Patient ID: ","Patient Name: ","Patient Age: ","Patient Gender: ","Patient Type: ","Skin localization: ","Classification Result: "]
+    patinet_data_pdf =db.get_recent_db()
+    str_patient_pdf = ["Patient ID: ","Patient Name: ","Patient Age: ",
+                       "Patient Gender: ","Patient Type: ",
+                       "Skin localization: ","Classification Result: "]
     # read chart image data from chart.png file
     with open("chart.png", "rb") as file:
         chart_data = file.read()
@@ -132,7 +136,6 @@ def generate_report():
     pdf.setFillColor(colors.black)
     y_pos = 10
     for i in range(len(patinet_data_pdf)):
-        print(str_patient_pdf[i] + str(patinet_data_pdf[i]))
         pdf.drawString(0.5*inch, y_pos*inch, str_patient_pdf[i] + str(patinet_data_pdf[i]))
         y_pos-=0.5
     # add the date to the report
@@ -146,18 +149,13 @@ def generate_report():
     pdf.save()
     buffer.seek(0)
     # Return the PDF file as a download
-    return send_file(path_or_file=buffer, download_name='classification_report.pdf', as_attachment=True)
+    return send_file(path_or_file=buffer, download_name=f'{patinet_data_pdf[0]}_report.pdf', as_attachment=True)
 
 @app.route('/history', methods=['POST'])
 def history():
     # get all prediction history and Info
-    result= db.get_history()
-    # if request.method == 'POST':
-    #     # patient_id = request.form['patient_id']
-    #     # filter the result to show only entries with the entered patient ID
-    #     # result = [row for row in result if row['patient_id'] == patient_id]
-    # print(result)
-    return render_template('history.html', result=result)
+    result= db.get_patient_history()
+    return render_template('history4.html', result=result)
 
 if __name__ == '__main__':
     app.run(host = "0.0.0.0", debug = True, use_reloader=False)
